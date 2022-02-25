@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -94,7 +94,7 @@ int _write(int file, char *ptr, int len)
 /* USER CODE BEGIN 0 */
 
 
-float OB_T_Setpoint = 25; 		// Setpoint : Temperature degree °C
+//float Temp_Setpoint_OB_OBC; 		// Setpoint : Temperature degree °C
 float T_Setpoint_Decimal; 		// Conversion of OB_T_Setpoint into a voltage
 float V_Ref_PicoLAS = 1.5; 		// Reference Voltage of PicoLAS TEC Module
 float Coeff_Temp;				//
@@ -103,18 +103,12 @@ uint32_t T_Setpoint_32bits;		// Conversion of T_Setpoint_Decimal into an unsigne
 uint16_t Raw_Data_ADC_NTC_FAN; 	// Direct 12-bits value from ADC conversion on PA_0 pin
 uint16_t Raw_Data_ADC_NTC_TEC; 	// Direct 12-bits value from ADC conversion on PA_1 pin
 uint16_t Raw_Data_TEC_Current; 	// Direct 12-bits value from ADC conversion on PA_5 pin
+uint16_t Alarm_Index;
+uint8_t Buffer_UART_RX[8];
+uint8_t Buffer_UART_TX[8]; 		// Data sent through UART
 
-uint8_t Buffer_UART[8]; 		// Data sent through UART
 uint16_t Duty_Cycle_PWM_Fan; 	// To define between 0 to 60,000 (60,000 = 100% = Full Speed)
 
-uint8_t Buffer_UART_RX[8];
-char Traduction[8];
-float T_cons;
-
-int State_OT = 0;
-int State_UT = 0;
-int Flag_OT = 0;
-int Flag_UT = 0;
 
 float Vsupply = 3.3; 			//power supply voltage (3.3 V rail) -STM32 ADC pin is NOT 5 V tolerant
 float Vout_FAN; 				//Voltage divider output
@@ -137,8 +131,7 @@ float Temp_C_TEC3;
 float Temp_K;
 float T0 = 298.15; 				//25°C in Kelvin
 
-int State_OTD = 0;
-int State_UTD = 0;
+
 
 
 /* USER CODE END 0 */
@@ -151,8 +144,8 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-	Buffer_UART[6] = 13; 		// | 2 last bytes corresponding to a line return when UART is used :
-	Buffer_UART[7] = 10; 		// | ASCII: \r\n    hex: (0x0D 0x0A)    dec: (13; 10)
+	Buffer_UART_TX[6] = 13; 		// | 2 last bytes corresponding to a line return when UART is used :
+	Buffer_UART_TX[7] = 10; 		// | ASCII: \r\n    hex: (0x0D 0x0A)    dec: (13; 10)
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -611,10 +604,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void ConvertTSetpointtoVoltage(void) {
-	Coeff_Temp = exp(B_param*((1/(OB_T_Setpoint + 273.15)-(1/T0))));
+
+	Coeff_Temp = exp(B_param*((1/(Temp_Setpoint_OB_OBC + 273.15)-(1/T0))));
 	T_Setpoint_Decimal = V_Ref_PicoLAS*(Coeff_Temp/(1 + Coeff_Temp));
 	T_Setpoint_32bits = T_Setpoint_Decimal*(0xfff+1)/3.3;
 	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, T_Setpoint_32bits);
+
 }
 
 void ADC2_Select_CH2 (void)
@@ -695,7 +690,7 @@ void ControlTemp()
 {
 	if(Temp_C_FAN < 25)
 	{
-		Duty_Cycle_PWM_Fan = 45000; // Speed 1 (75% Speed)
+		Duty_Cycle_PWM_Fan = 56000; // Speed 1 (75% Speed)
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, RESET);
 		UpdatePWMDutyCycle();
 	}
@@ -709,62 +704,27 @@ void ControlTemp()
 
 void TransmitDataMonitoring()
 {
-	Buffer_UART[0] = (uint8_t)Raw_Data_ADC_NTC_TEC;
-	Buffer_UART[1] = (uint8_t)(Raw_Data_ADC_NTC_TEC >> 8);
-	Buffer_UART[2] = (uint8_t)Raw_Data_TEC_Current;
-	Buffer_UART[3] = (uint8_t)(Raw_Data_TEC_Current >> 8);
-	Buffer_UART[4] = (uint8_t)Raw_Data_ADC_NTC_FAN;
-	Buffer_UART[5] = (uint8_t)(Raw_Data_ADC_NTC_FAN >> 8);
+	Buffer_UART_TX[0] = (uint8_t)Raw_Data_ADC_NTC_TEC;
+	Buffer_UART_TX[1] = (uint8_t)(Raw_Data_ADC_NTC_TEC >> 8);
+	Buffer_UART_TX[2] = (uint8_t)Raw_Data_TEC_Current;
+	Buffer_UART_TX[3] = (uint8_t)(Raw_Data_TEC_Current >> 8);
+	Buffer_UART_TX[4] = (uint8_t)Raw_Data_ADC_NTC_FAN;
+	Buffer_UART_TX[5] = (uint8_t)(Raw_Data_ADC_NTC_FAN >> 8);
 
-	HAL_UART_Transmit(&huart2, (uint8_t*)Buffer_UART, 8, HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart2, (uint8_t*)Buffer_UART_TX, 8, HAL_MAX_DELAY);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	for (int i = 0; i < 5; i++)
-		{
-			Traduction[i] = Buffer_UART_RX[i];
-		}
-	T_cons = atof(Traduction);
-	OB_T_Setpoint = T_cons;
-	HAL_UART_Receive_IT(&huart2, Buffer_UART_RX, 5);
-
-	 /* Checking Alarms State */
-
-	// HAL_Delay(100);
-	State_OT = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_10);
-	State_UT = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12);
-
-	if (State_OT == 1) {
-		Flag_OT = 0;
-	}
-	else {
-		Flag_OT = 1;
-	}
-
-
-	if (State_UT == 1) {
-		Flag_UT = 0 ;
-	}
-	else {
-		Flag_UT = 1;
-	}
-
-
+	/* Data has been sent from OBC*/
+	Receiving_Data();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	/* Alarms has been switched on, set flag = 1 */
-	if (GPIO_Pin == GPIO_PIN_10) {
-		Flag_OT = 1;
-	}
-
-	if (GPIO_Pin == GPIO_PIN_12) {
-		Flag_UT = 1;
-	}
+	Setting_Alarms_State(GPIO_Pin);
 }
-
 
 
 void UpdatePWMDutyCycle()
