@@ -40,7 +40,11 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+
 extern UART_HandleTypeDef huart2;
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
+extern DAC_HandleTypeDef hdac1;
 
 /* USER CODE END ET */
 
@@ -58,6 +62,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void ADC2_Select_CH2 (void);
+void ADC2_Select_CH13 (void);
+void UpdatePWMDutyCycle(void);
 
 /* USER CODE BEGIN EFP */
 

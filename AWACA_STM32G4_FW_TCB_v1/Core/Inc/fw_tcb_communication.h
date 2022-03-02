@@ -29,8 +29,9 @@
 
 
 extern uint8_t Buffer_UART_RX[8];
-
-extern float Temp_Setpoint_OB_OBC;
+extern int OB_Flag_OT;
+extern int OB_Flag_UT;
+extern float OB_T_C_Setpoint_OBC;
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -40,9 +41,9 @@ extern float Temp_Setpoint_OB_OBC;
 
 
 /* Exported functions prototypes ---------------------------------------------*/
-void Receiving_Data(void);
-void Checking_Alarms_State(void);
-void Setting_Alarms_State(uint16_t);
+void Receiving_Data_OBC(void);
+void Checking_Alarms_State_OB(void);
+void Setting_Alarms_State_OB(uint16_t);
 /* Private defines -----------------------------------------------------------*/
 
 

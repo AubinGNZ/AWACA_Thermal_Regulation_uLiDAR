@@ -25,44 +25,48 @@
 
 /* Variables ------------------------------------------------------------------*/
 uint8_t Buffer_UART_RX[8] = {0};	// |Buffer containing data from UART RX
-char Buffer_RX_Str[8] = {0};		// |Buffer used for conversion to float
+char Buffer_RX_Str[8] = {0};		// |Buffer used for conversion from byte to
+									// |char
 
-float Temp_Setpoint_OB_OBC = 25;	// |Temperature Setpoint for OB sent by OBC
+float OB_T_C_Setpoint_OBC = 25;		// |Temperature Setpoint for OB sent by OBC
 
-int Flag_OT = 0;					// |Define if OT or UT alarms has been activated
-int Flag_UT = 0;					// |since last acquisition from OBC
+int OB_Flag_OT = 0;					// |Define if OT or UT alarms has been
+int OB_Flag_UT = 0;					// |activated since last acquisition from OBC
+
+
 /* Functions  ------------------------------------------------------------------*/
 
 // |Function called inside UART Callback Func.
-void Receiving_Data()
+void Receiving_Data_OBC(void)
 {
 	for (int i = 0; i < 5; i++)
 		{
 			Buffer_RX_Str[i] = Buffer_UART_RX[i];
 		}
-	Temp_Setpoint_OB_OBC = atof(Buffer_RX_Str);
+	OB_T_C_Setpoint_OBC = atof(Buffer_RX_Str);
+	Setting_Parameters_PicoLAS();
 
 	/* Reset UART Communication & Checking Alarms State */
 
 	HAL_UART_Receive_IT(&huart2, Buffer_UART_RX, 5);
-	Checking_Alarms_State();
+	Checking_Alarms_State_OB();
 
 }
 
-void Checking_Alarms_State(void)
+void Checking_Alarms_State_OB(void)
 {
-	Flag_OT = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_10);
-	Flag_UT = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12);
+	OB_Flag_OT = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_10);
+	OB_Flag_UT = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12);
 }
 
-void Setting_Alarms_State(uint16_t Alarm_Index)
+void Setting_Alarms_State_OB(uint16_t Alarm_Index)
 {
 	/* OverTemperature Alarm has been triggered*/
 	if (Alarm_Index == GPIO_PIN_10) {
-		Flag_OT = 1;
+		OB_Flag_OT = 1;
 	}
 	/* UnderTemperature Alarm has been triggered*/
 	if (Alarm_Index == GPIO_PIN_12) {
-		Flag_UT = 1;
+		OB_Flag_UT = 1;
 	}
 }

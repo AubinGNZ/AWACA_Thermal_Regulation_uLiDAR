@@ -66,72 +66,14 @@ static void MX_ADC2_Init(void);
 static void MX_DAC1_Init(void);
 /* USER CODE BEGIN PFP */
 
-void ConvertTSetpointtoVoltage(void);
-void ConvertToTemperature(void);
-void CollectNTCData(void);
-void ControlTemp(void);
-void UpdatePWMDutyCycle(void);
-void CollectTECData(void);
-void ConvertToTECIntensity(void);
-
 void ADC2_Select_CH2 (void);
 void ADC2_Select_CH13 (void);
 
 void TransmitDataMonitoring(void);
 
-int _write(int file, char *ptr, int len)
-{
-  /* Implement your write code here, this is used by puts and printf for example */
-  int i=0;
-  for(i=0 ; i<len ; i++)
-    ITM_SendChar((*ptr++));
-  return len;
-}
 
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-
-//float Temp_Setpoint_OB_OBC; 		// Setpoint : Temperature degree °C
-float T_Setpoint_Decimal; 		// Conversion of OB_T_Setpoint into a voltage
-float V_Ref_PicoLAS = 1.5; 		// Reference Voltage of PicoLAS TEC Module
-float Coeff_Temp;				//
-uint32_t T_Setpoint_32bits;		// Conversion of T_Setpoint_Decimal into an unsigned int for DAC
-
-uint16_t Raw_Data_ADC_NTC_FAN; 	// Direct 12-bits value from ADC conversion on PA_0 pin
-uint16_t Raw_Data_ADC_NTC_TEC; 	// Direct 12-bits value from ADC conversion on PA_1 pin
-uint16_t Raw_Data_TEC_Current; 	// Direct 12-bits value from ADC conversion on PA_5 pin
 uint16_t Alarm_Index;
-uint8_t Buffer_UART_RX[8];
 uint8_t Buffer_UART_TX[8]; 		// Data sent through UART
-
-uint16_t Duty_Cycle_PWM_Fan; 	// To define between 0 to 60,000 (60,000 = 100% = Full Speed)
-
-
-float Vsupply = 3.3; 			//power supply voltage (3.3 V rail) -STM32 ADC pin is NOT 5 V tolerant
-float Vout_FAN; 				//Voltage divider output
-float Vout_FAN2;
-float Vout_TEC; 				//Voltage divider output
-float Vout_I_TEC;
-float I_TEC;
-float Coef_A;
-
-float R_10k = 9128; 			//10k resistor measured resistance in Ohms (other element in the voltage divider)
-float B_param = 3954; 			//B-coefficient of the thermistor
-float R_NTC; 					//NTC thermistor resistance in Ohms
-
-float Temp_C_FAN; 				//Temperature measured by the thermistor (Celsius)
-float Temp_C_TEC; 				//Temperature measured by the thermistor (Celsius)
-
-float Temp_C_FAN2;
-float Temp_C_TEC2;
-float Temp_C_TEC3;
-float Temp_K;
-float T0 = 298.15; 				//25°C in Kelvin
-
-
 
 
 /* USER CODE END 0 */
@@ -177,6 +119,10 @@ int main(void)
   HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET); // Set SHDN on HIGH to let the TEC module running
   HAL_UART_Receive_IT(&huart2, Buffer_UART_RX, 5);
+
+  Checking_Alarms_State_OB();
+  Setting_Parameters_PicoLAS();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -187,15 +133,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-		ConvertTSetpointtoVoltage();
-		CollectNTCData();
-		ConvertToTemperature();
-		CollectTECData();
-		ConvertToTECIntensity();
-		ControlTemp();
-		TransmitDataMonitoring();
 
-
+		Receiving_Data_OB();
+		Data_Processing_OB();
+		Control_Internal_Fan_OB();
   }
   /* USER CODE END 3 */
 }
@@ -603,15 +544,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void ConvertTSetpointtoVoltage(void) {
-
-	Coeff_Temp = exp(B_param*((1/(Temp_Setpoint_OB_OBC + 273.15)-(1/T0))));
-	T_Setpoint_Decimal = V_Ref_PicoLAS*(Coeff_Temp/(1 + Coeff_Temp));
-	T_Setpoint_32bits = T_Setpoint_Decimal*(0xfff+1)/3.3;
-	HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, T_Setpoint_32bits);
-
-}
-
 void ADC2_Select_CH2 (void)
 {
 	ADC_ChannelConfTypeDef sConfig = {0};
@@ -643,87 +575,29 @@ void ADC2_Select_CH13 (void)
 }
 
 
-void CollectNTCData()
-{
-  HAL_ADC_Start(&hadc1); // Start ADC 1 NTC Fan-System
-  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY); // Wait for the conversion to be complete
-  Raw_Data_ADC_NTC_FAN = HAL_ADC_GetValue(&hadc1); // Get 12 bits value and define it as an integer between 0 and 4096
-  HAL_ADC_Stop(&hadc1);
 
-  ADC2_Select_CH2();
-  HAL_ADC_Start(&hadc2); // Start ADC 2 NTC TEC-System
-  HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY); // Wait for the conversion to be complete
-  Raw_Data_ADC_NTC_TEC = HAL_ADC_GetValue(&hadc2); // Get 12 bits value and define it as an integer between 0 and 4096
-  HAL_ADC_Stop(&hadc2);
-}
-
-void ConvertToTemperature()
-{
-  Vout_FAN = Raw_Data_ADC_NTC_FAN * (3.36/4095); //4095 �' 12 bit resolution
-  R_NTC = (Vout_FAN * R_10k) /(Vsupply - Vout_FAN); //calculating the resistance of the thermistor
-  Temp_K = (T0*B_param)/(T0*log(R_NTC/R_10k)+B_param); //Temperature in Kelvin
-  Temp_C_FAN = Temp_K - 273.15; //converting into Celsius
-//Temp_C_FAN2 = ((T0*B_param)/(T0*log(Vout_FAN/(Vsupply - Vout_FAN)) + B_param)) -273.15;
-
-
-  Vout_TEC = Raw_Data_ADC_NTC_TEC * (3.36/4095); //4095 �' 12 bit resolution - Initial average offset in V
-  Coef_A = (Vout_TEC - 4.5)/(-4*1.5);
-  Temp_C_TEC = B_param/((B_param/T0) + log(Coef_A/(1-Coef_A))) - 273.15;
-}
-
-void CollectTECData()
-{
-  ADC2_Select_CH13();
-  HAL_ADC_Start(&hadc2); // Start ADC 2 NTC TEC-System
-  HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY); // Wait for the conversion to be complete
-  Raw_Data_TEC_Current = HAL_ADC_GetValue(&hadc2); // Get 12 bits value and define it as an integer between 0 and 4096
-  HAL_ADC_Stop(&hadc2);
-}
-
-void ConvertToTECIntensity()
-{
-  Vout_I_TEC = Raw_Data_TEC_Current * (3.3/4095) ; //4095 �' 12 bit resolution
-  I_TEC = (Vout_I_TEC-1.5)/0.4 ;
-}
-
-void ControlTemp()
-{
-	if(Temp_C_FAN < 25)
-	{
-		Duty_Cycle_PWM_Fan = 56000; // Speed 1 (75% Speed)
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, RESET);
-		UpdatePWMDutyCycle();
-	}
-	else
-	{
-		Duty_Cycle_PWM_Fan = 60000; // Speed 2 (100% Speed)
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, SET);
-		UpdatePWMDutyCycle();
-	}
-}
-
-void TransmitDataMonitoring()
-{
-	Buffer_UART_TX[0] = (uint8_t)Raw_Data_ADC_NTC_TEC;
-	Buffer_UART_TX[1] = (uint8_t)(Raw_Data_ADC_NTC_TEC >> 8);
-	Buffer_UART_TX[2] = (uint8_t)Raw_Data_TEC_Current;
-	Buffer_UART_TX[3] = (uint8_t)(Raw_Data_TEC_Current >> 8);
-	Buffer_UART_TX[4] = (uint8_t)Raw_Data_ADC_NTC_FAN;
-	Buffer_UART_TX[5] = (uint8_t)(Raw_Data_ADC_NTC_FAN >> 8);
-
-	HAL_UART_Transmit(&huart2, (uint8_t*)Buffer_UART_TX, 8, HAL_MAX_DELAY);
-}
+//void TransmitDataMonitoring()
+//{
+//	Buffer_UART_TX[0] = (uint8_t)Raw_Data_ADC_NTC_TEC;
+//	Buffer_UART_TX[1] = (uint8_t)(Raw_Data_ADC_NTC_TEC >> 8);
+//	Buffer_UART_TX[2] = (uint8_t)Raw_Data_TEC_Current;
+//	Buffer_UART_TX[3] = (uint8_t)(Raw_Data_TEC_Current >> 8);
+//	Buffer_UART_TX[4] = (uint8_t)Raw_Data_ADC_NTC_FAN;
+//	Buffer_UART_TX[5] = (uint8_t)(Raw_Data_ADC_NTC_FAN >> 8);
+//
+//	HAL_UART_Transmit(&huart2, (uint8_t*)Buffer_UART_TX, 8, HAL_MAX_DELAY);
+//}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	/* Data has been sent from OBC*/
-	Receiving_Data();
+	Receiving_Data_OBC();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	/* Alarms has been switched on, set flag = 1 */
-	Setting_Alarms_State(GPIO_Pin);
+	Setting_Alarms_State_OB(GPIO_Pin);
 }
 
 
