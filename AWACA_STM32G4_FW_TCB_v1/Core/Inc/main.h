@@ -30,12 +30,10 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32g4xx_hal.h"
 
-#include "fw_tcb_communication.h"
-#include "fw_tcb_ob_regulation.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "fw_tcb_communication.h"
+#include "fw_tcb_ob_regulation.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -62,12 +60,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-void ADC2_Select_CH2 (void);
-void ADC2_Select_CH13 (void);
-void UpdatePWMDutyCycle(void);
 
 /* USER CODE BEGIN EFP */
-
+void UpdatePWMDutyCycle(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

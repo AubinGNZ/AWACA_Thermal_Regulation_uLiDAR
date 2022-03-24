@@ -26,10 +26,18 @@
 /* Exported types ------------------------------------------------------------*/
 extern unsigned short OB_Reg_State;
 
+extern unsigned long Buffer_ADC2[3];
+
+extern uint16_t Raw_Data_ADC_NTC_FAN; 	// | 12-bits value from ADC conversion on PA_0
+extern uint16_t Raw_Data_ADC_NTC_TEC; 	// | 12-bits value from ADC conversion on PA_1
+extern uint16_t Raw_Data_TEC_Current; 	// | 12-bits value from ADC conversion on PA_5
+
 extern float OB_T_C_Ext_NTC_OB;
 extern float OB_T_C_Pic_NTC_OB;
 extern float OB_I_A_Pic_TEC_OB;
+
 extern unsigned int Duty_Cycle_PWM_Fan;
+
 /* Exported constants --------------------------------------------------------*/
 
 

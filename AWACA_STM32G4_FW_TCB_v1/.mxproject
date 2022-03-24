@@ -9,17 +9,17 @@ CDefines=USE_HAL_DRIVER;STM32G431xx;USE_HAL_DRIVER;USE_HAL_DRIVER;
 [PreviousGenFiles]
 AdvancedFolderStructure=true
 HeaderFileListSize=3
-HeaderFiles#0=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Inc/stm32g4xx_it.h
-HeaderFiles#1=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Inc/stm32g4xx_hal_conf.h
-HeaderFiles#2=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Inc/main.h
+HeaderFiles#0=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Inc/stm32g4xx_it.h
+HeaderFiles#1=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Inc/stm32g4xx_hal_conf.h
+HeaderFiles#2=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Inc/main.h
 HeaderFolderListSize=1
-HeaderPath#0=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Inc
+HeaderPath#0=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Inc
 HeaderFiles=;
 SourceFileListSize=3
-SourceFiles#0=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Src/stm32g4xx_it.c
-SourceFiles#1=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Src/stm32g4xx_hal_msp.c
-SourceFiles#2=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Src/main.c
+SourceFiles#0=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Src/stm32g4xx_it.c
+SourceFiles#1=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Src/stm32g4xx_hal_msp.c
+SourceFiles#2=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Src/main.c
 SourceFolderListSize=1
-SourcePath#0=C:/Users/ignazi/Documents/Workspace_PicoLAS_MultiChannel_ADC/STM32G431KB_PicoLAS_V2/STM32G431KB_PicoLAS_V2/Core/Src
+SourcePath#0=C:/Users/ignazi/git/AWACA_Thermal_Regulation_uLiDAR/AWACA_STM32G4_FW_TCB_v1/Core/Src
 SourceFiles=;
 

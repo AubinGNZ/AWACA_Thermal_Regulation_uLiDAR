@@ -33,39 +33,53 @@ static float B_NTC_Param = 3954;// | Kelvin
 float OB_T_C_Ext_NTC_OB = 0;	// | float value of ext. temperature NTC in OB
 float OB_T_C_Pic_NTC_OB = 0;	// | float value of PicoLAS temperature NTC in OB
 float OB_I_A_Pic_TEC_OB = 0;	// | float value of PicoLAS current through TEC
-// float OB_T_C_Setpoint_OBC = 25; // | float value of Temp. Setpoint sent by OBC
+
+unsigned long Buffer_ADC2[3] = {0};
+
 unsigned short OB_Reg_State = 1;	// | ON/OFF of OB Regulation
 unsigned int Duty_Cycle_PWM_Fan = 0;
+
+float V_out_ADC_Ext_NTC_OB;
+float V_out_ADC_Pic_NTC_OB;
+float V_out_ADC_Pic_Cur_OB;
+
+float OB_T_32b_Setpoint_OBC;
+float V_Ref_PicoLAS = 1.5;
 
 /* Functions  ------------------------------------------------------------------*/
 void Receiving_Data_OB(void)
 {
-	// |Start ADC 1 : eq. voltage of external NTC
-	HAL_ADC_Start(&hadc1);
-	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	Raw_Data_ADC_NTC_FAN = HAL_ADC_GetValue(&hadc1);
-	HAL_ADC_Stop(&hadc1);
+	Raw_Data_ADC_NTC_TEC = Buffer_ADC2[0];	// | 12-bits value from ADC conversion on PA_1
+	Raw_Data_TEC_Current = Buffer_ADC2[1];
+	Raw_Data_ADC_NTC_FAN = Buffer_ADC2[2];	// | 12-bits value from ADC conversion on PA_0
+/*
+|Start ADC 1 : eq. voltage of external NTC
+HAL_ADC_Start(&hadc1);
+HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+Raw_Data_ADC_NTC_FAN = HAL_ADC_GetValue(&hadc1);
+HAL_ADC_Stop(&hadc1);
 
-	// |Start ADC 2 : eq. voltage of PicoLAS NTC
-	ADC2_Select_CH2(); 									/* Select Channel 2 */
-	HAL_ADC_Start(&hadc2);
-	HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-	Raw_Data_ADC_NTC_TEC = HAL_ADC_GetValue(&hadc2);
-	HAL_ADC_Stop(&hadc2);
+|Start ADC 2 : eq. voltage of PicoLAS NTC
+ADC2_Select_CH2(); 									 Select Channel 2
+HAL_ADC_Start(&hadc2);
+HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
+Raw_Data_ADC_NTC_TEC = HAL_ADC_GetValue(&hadc2);
+HAL_ADC_Stop(&hadc2);
 
-	// |Start ADC 2 : eq. current through Peltier
-	ADC2_Select_CH13(); 								/* Select Channel 13 */
-	HAL_ADC_Start(&hadc2);
-	HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-	Raw_Data_TEC_Current = HAL_ADC_GetValue(&hadc2);
-	HAL_ADC_Stop(&hadc2);
+|Start ADC 2 : eq. current through Peltier
+ADC2_Select_CH13(); 								 Select Channel 13
+HAL_ADC_Start(&hadc2);
+HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
+Raw_Data_TEC_Current = HAL_ADC_GetValue(&hadc2);
+HAL_ADC_Stop(&hadc2);
+*/
+
+
 }
 
 void Data_Processing_OB(void)
 {
-	static float V_out_ADC_Ext_NTC_OB;
-	static float V_out_ADC_Pic_NTC_OB;
-	static float V_out_ADC_Pic_Cur_OB;
+
 	static float V_supply = 3.3;
 
 	/* Conversion from ADC 1 Voltage to Temperature (°C) */
@@ -102,8 +116,6 @@ void Setting_Parameters_PicoLAS(void)
 	}
 
 	/* Set DAC to define the Temperature Setpoing for OB Regulation */
-	float OB_T_32b_Setpoint_OBC;
-	float V_Ref_PicoLAS = 1.5;
 
 	OB_T_32b_Setpoint_OBC = V_Ref_PicoLAS*(exp(B_NTC_Param*((1 /
 							(OB_T_C_Setpoint_OBC + T_0_K) - (1 / T_25_K)))) /

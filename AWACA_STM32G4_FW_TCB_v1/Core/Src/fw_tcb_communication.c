@@ -26,9 +26,9 @@
 /* Variables ------------------------------------------------------------------*/
 uint8_t Buffer_UART_RX[8] = {0};	// |Buffer containing data from UART RX
 char Buffer_RX_Str[8] = {0};		// |Buffer used for conversion from byte to
-									// |char
+									// |chat
 
-float OB_T_C_Setpoint_OBC = 25;		// |Temperature Setpoint for OB sent by OBC
+float OB_T_C_Setpoint_OBC = 24.2;		// |Temperature Setpoint for OB sent by OBC
 
 int OB_Flag_OT = 0;					// |Define if OT or UT alarms has been
 int OB_Flag_UT = 0;					// |activated since last acquisition from OBC
