@@ -73,6 +73,8 @@ void TransmitDataMonitoring(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t Buffer_UART_TX[8];
+extern char *raw_frame;
+
 /* USER CODE END 0 */
 
 /**
@@ -82,9 +84,10 @@ uint8_t Buffer_UART_TX[8];
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	raw_frame = calloc(100, 1);
 	Buffer_UART_TX[6] = 13; 		// | 2 last bytes corresponding to a line return when UART is used :
 	Buffer_UART_TX[7] = 10; 		// | ASCII: \r\n    hex: (0x0D 0x0A)    dec: (13; 10)
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -115,7 +118,7 @@ int main(void)
   HAL_ADC_Start_DMA(&hadc2, Buffer_ADC2, 3);
   HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
-  HAL_UART_Receive_IT(&huart2, Buffer_UART_RX, 5);
+  HAL_UART_Receive_IT(&huart2, Buffer_UART_RX, 1);
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET); // Set SHDN on HIGH to let the TEC module running
@@ -134,10 +137,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-		Receiving_Data_OB();
-		Data_Processing_OB();
-		Control_Internal_Fan_OB();
-		TransmitDataMonitoring();
+	Receiving_Data_OB();
+	Data_Processing_OB();
+	Control_Internal_Fan_OB();
+	//TransmitDataMonitoring();
   }
   /* USER CODE END 3 */
 }
@@ -462,7 +465,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
@@ -507,7 +510,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
@@ -561,7 +564,8 @@ void TransmitDataMonitoring(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	/* Data has been sent from OBC*/
-	Receiving_Data_OBC();
+	Receiving_Data_OBC(); //MISE EN PAUSE DE LA FONCTION
+
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

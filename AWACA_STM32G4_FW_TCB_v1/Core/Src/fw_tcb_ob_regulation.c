@@ -52,28 +52,6 @@ void Receiving_Data_OB(void)
 	Raw_Data_ADC_NTC_TEC = Buffer_ADC2[0];	// | 12-bits value from ADC conversion on PA_1
 	Raw_Data_TEC_Current = Buffer_ADC2[1];
 	Raw_Data_ADC_NTC_FAN = Buffer_ADC2[2];	// | 12-bits value from ADC conversion on PA_0
-/*
-|Start ADC 1 : eq. voltage of external NTC
-HAL_ADC_Start(&hadc1);
-HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-Raw_Data_ADC_NTC_FAN = HAL_ADC_GetValue(&hadc1);
-HAL_ADC_Stop(&hadc1);
-
-|Start ADC 2 : eq. voltage of PicoLAS NTC
-ADC2_Select_CH2(); 									 Select Channel 2
-HAL_ADC_Start(&hadc2);
-HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-Raw_Data_ADC_NTC_TEC = HAL_ADC_GetValue(&hadc2);
-HAL_ADC_Stop(&hadc2);
-
-|Start ADC 2 : eq. current through Peltier
-ADC2_Select_CH13(); 								 Select Channel 13
-HAL_ADC_Start(&hadc2);
-HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-Raw_Data_TEC_Current = HAL_ADC_GetValue(&hadc2);
-HAL_ADC_Stop(&hadc2);
-*/
-
 
 }
 
@@ -105,7 +83,7 @@ void Setting_Parameters_PicoLAS(void)
 {
 
 	/* Set SHDN to activate OB regulation */
-	if(OB_Reg_State == 1) {
+	if (OB_Reg_State == 1) {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
 	}
 	else if (OB_Reg_State == 0) {
